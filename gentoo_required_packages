@@ -1,0 +1,3 @@
+net-dns/bind -> DNS resolution
+net-wireless/hostapd -> hosting of the network
+net-misc/dhcp -> automatically assign IPs on the new network

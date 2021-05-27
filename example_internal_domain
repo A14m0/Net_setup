@@ -1,0 +1,19 @@
+$TTL 2d
+@	IN SOA	ns.leetnet.	root.leetnet. (
+	2021052701	; serial
+	3h	; refresh
+	1h	; retry
+	1w	; expiry
+	1d )	; minimum
+
+leetnet.		IN MX	0 mail.leetnet.
+leetnet.		IN TXT	"v=spf1 ip4:YOUR_PUBLIC_IP/32 mx ptr mx:mail.leetnet ~all"
+leetnet.		IN NS	ns.leetnet.
+leetnet.		IN NS	1.1.1.1
+www.leetnet.	IN A	133.7.0.1
+ns.leetnet.		IN A	133.7.0.1
+mail.leetnet.	IN A	133.7.0.1
+router.leetnet.	IN A	133.7.0.1
+hell.leetnet.	IN A	133.7.0.1
+heaven.leetnet.	IN A	133.7.0.1
+desktop.leetnet.	IN A	133.7.0.1

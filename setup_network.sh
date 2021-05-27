@@ -1,5 +1,9 @@
 #!/bin/bash
 
+ETH_INTERFACE="enp4s0"
+WIRELESS_INTERFACE="wlp2s0"
+
+# sets up the NAT for the new network
 function setup_nat(){
     systemctl start named
 
@@ -7,18 +11,19 @@ function setup_nat(){
     sysctl net.ipv6.conf.default.forwarding=1
     sysctl net.ipv6.conf.all.forwarding=1
 
-    iptables -t nat -A POSTROUTING -o eno1 -j MASQUERADE
-    iptables -A FORWARD -i eno1 -o wlp2s0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-    iptables -A FORWARD -i wlp2s0 -o eno1 -j ACCEPT
+    iptables -t nat -A POSTROUTING -o $ETH_INTERFACE -j MASQUERADE
+    iptables -A FORWARD -i $ETH_INTERFACE -o $WIRELESS_INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
+    iptables -A FORWARD -i $WIRELESS_INTERFACE -o $ETH_INTERFACE -j ACCEPT
 
 }
 
+# start the access point
 function start_ap(){
     nmcli radio wifi off
     rfkill unblock wlan
 
-    ip link set down dev wlp2s0
-    ifconfig wlp2s0 133.7.0.1/24 up
+    ip link set down dev $WIRELESS_INTERFACE
+    ifconfig $WIRELESS_INTERFACE 133.7.0.1/24 up
     sleep 1
 
     systemctl start hostapd.service
@@ -38,8 +43,13 @@ function start_ap(){
     echo "SS1D is: \"${ap}\""
     echo "P4ssW0rd is: \"${pw}\""
 
+    echo "[ ] Starting HostAPD..."
     systemctl status hostapd.service
+
+    echo "[ ] Starting DHCPD4..."
     systemctl status dhcpd4.service
+
+    echo "[ ] Starting NameD..."
     systemctl status named
 }
 

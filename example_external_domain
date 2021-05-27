@@ -1,0 +1,8 @@
+$TTL 2d
+@	IN SOA	ns.leetnet.	ADMIN.leetnet. (
+	2021052701	;serial
+	3h	;refresh
+	1h	;retry
+	1w	;expiry
+	1d )	;minimum
+  
