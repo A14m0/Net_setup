@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ETH_INTERFACE="enp4s0"
+ETH_INTERFACE="eno1"
 WIRELESS_INTERFACE="wlp2s0"
 
 # sets up the NAT for the new network
@@ -11,8 +11,25 @@ function setup_nat(){
     sysctl net.ipv6.conf.default.forwarding=1
     sysctl net.ipv6.conf.all.forwarding=1
 
-    iptables -t nat -A POSTROUTING -o $ETH_INTERFACE -j MASQUERADE
+    echo "[ ] Backing up IPTable rules..."
+    iptables-save > /tmp/tables_backup.bak
+
+    echo "[ ] Flushing IPTable rules..."
+    iptables -F
+    iptables -t nat -F
+
+    echo "[ ] Setting up forwarding..."
+    # for the NAT table,
+    #   PRE-ROUTING: Packets when the DESTINATION address needs to be changed
+    #   POST-ROUTING: Packets when the SOURCE address needs to be changed
+    #   OUTPUT: Packets originating from the firewall
+
+    # PACKET PATH: NAT_PRE-ROUTING -> FORWARD chain -> NAT_POST-ROUTING -> out
+    iptables -A PREROUTING -i $ETH_INTERFACE -j ACCEPT
+    iptables -t nat -A POSTROUTING -s 192.168.91.0/24 -j MASQUERADE
+    # append to the FORWARD chain, packets going into ETH_INF and out WIRELESS_INF, if the packet is part of a related or established connection, allow them
     iptables -A FORWARD -i $ETH_INTERFACE -o $WIRELESS_INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
+    # append to the FORWARD chain, packets going into WIRELESS_INF and out ETH_INF, allow them
     iptables -A FORWARD -i $WIRELESS_INTERFACE -o $ETH_INTERFACE -j ACCEPT
 
 }
@@ -23,7 +40,7 @@ function start_ap(){
     rfkill unblock wlan
 
     ip link set down dev $WIRELESS_INTERFACE
-    ifconfig $WIRELESS_INTERFACE 133.7.0.1/24 up
+    ifconfig $WIRELESS_INTERFACE 192.168.91.1/24 up
     sleep 1
 
     systemctl start hostapd.service
@@ -59,6 +76,9 @@ function stop_ap(){
     systemctl stop named
     systemctl stop dhcpd4.service
     systemctl stop hostapd.service
+
+    iptables-restore < /tmp/tables_backup.bak
+    rm -f /tmp/tables_backup.bak
 
     echo "R3st0r3d"
 }
